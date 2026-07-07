@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Breathe">
+<meta name="theme-color" content="#050506">
+<title>Breathe</title>
+<style>
+  :root {
+    --bg: #050506;
+    --ink: #f5f6f7;
+    --mist: #a6a9ad;
+    --dim: #5b5e63;
+    --line: rgba(245, 246, 247, 0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+  }
+
+  .app {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(env(safe-area-inset-top, 0px) + 28px) 24px calc(env(safe-area-inset-bottom, 0px) + 32px);
+  }
+
+  /* ---------- header ---------- */
+  .brand {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em; /* optically recenter tracked caps */
+    color: var(--dim);
+    text-transform: uppercase;
+    transition: color 0.8s ease;
+  }
+  .app.is-running .brand { color: var(--dim); }
+
+  /* ---------- stage ---------- */
+  .stage {
+    position: relative;
+    width: min(78vw, 340px);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+  }
+  .stage > * { grid-area: 1 / 1; }
+
+  .ring {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+  }
+  .ring .track { stroke: rgba(245, 246, 247, 0.08); }
+  .ring .arc {
+    stroke: var(--ink);
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .app.is-running .ring .arc { opacity: 0.9; }
+
+  .disc {
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    background:
+      radial-gradient(closest-side, rgba(245, 246, 247, 0.16), rgba(245, 246, 247, 0.05) 62%, rgba(245, 246, 247, 0) 100%);
+    border: 1px solid var(--line);
+    transform: scale(0.62);
+    will-change: transform;
+  }
+
+  .halo {
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    border: 1px solid rgba(245, 246, 247, 0.22);
+    transform: scale(0.62);
+    opacity: 0;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+  .app.is-holding .halo {
+    opacity: 1;
+    animation: haloBreathe 3.5s ease-in-out infinite;
+  }
+  @keyframes haloBreathe {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50%      { transform: scale(1.045); opacity: 0.15; }
+  }
+
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .phase-word {
+    font-size: 27px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    min-height: 1.3em;
+  }
+  .phase-count {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--mist);
+    font-variant-numeric: tabular-nums;
+    min-height: 1.2em;
+  }
+
+  .big-count {
+    font-size: 104px;
+    font-weight: 100;
+    line-height: 1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- footer ---------- */
+  .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+    min-height: 148px;
+    justify-content: flex-end;
+  }
+
+  .tagline {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--mist);
+    text-align: center;
+    line-height: 1.55;
+    max-width: 26ch;
+    text-wrap: balance;
+  }
+  .technique {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .btn {
+    appearance: none;
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+    text-transform: uppercase;
+    padding: 17px 54px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.35s ease, color 0.35s ease, opacity 0.4s ease, transform 0.15s ease;
+  }
+  .btn:active { background: var(--ink); color: var(--bg); transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--mist); outline-offset: 4px; }
+
+  .btn-quiet {
+    border: none;
+    padding: 14px 24px;
+    color: var(--dim);
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+    font-size: 12px;
+  }
+  .btn-quiet:active { background: transparent; color: var(--ink); }
+
+  .cycle-dots {
+    display: flex;
+    gap: 12px;
+  }
+  .cycle-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(245, 246, 247, 0.18);
+    transition: background 0.6s ease;
+  }
+  .cycle-dots span.done { background: var(--ink); }
+
+  /* ---------- view switching ---------- */
+  .view { transition: opacity 0.5s ease; }
+  .view.hidden {
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    visibility: hidden;
+  }
+
+  .fade-in { animation: fadeIn 0.7s ease both; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .disc, .halo { transition-duration: 0.5s !important; }
+    .app.is-holding .halo { animation: none; opacity: 0.4; }
+    .fade-in { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main class="app" id="app">
+
+  <div class="brand">Breathe</div>
+
+  <div class="stage" aria-live="polite">
+    <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+      <circle class="track" cx="150" cy="150" r="146" fill="none" stroke-width="1.5"></circle>
+      <circle class="arc" id="arc" cx="150" cy="150" r="146" fill="none" stroke-width="2.5"></circle>
+    </svg>
+    <div class="halo" id="halo"></div>
+    <div class="disc" id="disc"></div>
+    <div class="center">
+      <div class="big-count view hidden" id="bigCount">3</div>
+      <div class="phase-word" id="phaseWord"></div>
+      <div class="phase-count" id="phaseCount"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="view" id="idleView">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:22px;">
+        <p class="tagline">Four slow breaths to settle your mind and body.</p>
+        <div class="technique">4 · 7 · 8 relaxation</div>
+        <button class="btn" id="startBtn">Start</button>
+      </div>
+    </div>
+
+    <div class="view hidden" id="runView">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:22px;">
+        <div class="cycle-dots" id="cycleDots" aria-label="Breath cycles">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <button class="btn btn-quiet" id="endBtn">End</button>
+      </div>
+    </div>
+
+    <div class="view hidden" id="doneView">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:22px;">
+        <p class="tagline" id="doneText">Well done. Notice how much quieter everything feels.</p>
+        <button class="btn" id="againBtn">Again</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var PHASES = [
+    { label: 'Breathe in',  dur: 4000, scale: 1,    ease: 'cubic-bezier(0.37, 0, 0.28, 1)' },
+    { label: 'Hold',        dur: 7000, scale: 1,    ease: 'linear' },
+    { label: 'Breathe out', dur: 8000, scale: 0.62, ease: 'cubic-bezier(0.45, 0, 0.35, 1)' }
+  ];
+  var CYCLES = 4;
+  var REST_SCALE = 0.62;
+
+  var app = document.getElementById('app');
+  var disc = document.getElementById('disc');
+  var halo = document.getElementById('halo');
+  var arc = document.getElementById('arc');
+  var phaseWord = document.getElementById('phaseWord');
+  var phaseCount = document.getElementById('phaseCount');
+  var bigCount = document.getElementById('bigCount');
+  var idleView = document.getElementById('idleView');
+  var runView = document.getElementById('runView');
+  var doneView = document.getElementById('doneView');
+  var startBtn = document.getElementById('startBtn');
+  var endBtn = document.getElementById('endBtn');
+  var againBtn = document.getElementById('againBtn');
+  var dots = document.getElementById('cycleDots').children;
+
+  var CIRC = 2 * Math.PI * 146;
+  arc.style.strokeDasharray = CIRC;
+  arc.style.strokeDashoffset = CIRC;
+
+  var state = 'idle';        // idle | countdown | running | done
+  var phaseIdx = 0;
+  var cycle = 0;
+  var phaseStart = 0;        // performance.now() at phase start
+  var pausedElapsed = null;  // elapsed ms within phase when page was hidden
+  var rafId = 0;
+  var countdownTimer = 0;
+  var wakeLock = null;
+
+  function show(view) {
+    [idleView, runView, doneView].forEach(function (v) {
+      v.classList.toggle('hidden', v !== view);
+    });
+  }
+
+  function setDisc(scale, durMs, ease) {
+    var t = 'transform ' + (durMs / 1000) + 's ' + ease;
+    disc.style.transition = t;
+    halo.style.transition = t;
+    disc.style.transform = 'scale(' + scale + ')';
+    halo.style.transform = 'scale(' + scale + ')';
+  }
+
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      wakeLock = lock;
+    }).catch(function () { /* screen lock unavailable; exercise still works */ });
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+
+  /* ---------- countdown 3 · 2 · 1 ---------- */
+  function startCountdown() {
+    state = 'countdown';
+    show(runView);
+    app.classList.add('is-running');
+    phaseWord.textContent = '';
+    phaseCount.textContent = 'Get comfortable';
+    bigCount.classList.remove('hidden');
+    requestWakeLock();
+
+    var n = 3;
+    function step() {
+      if (state !== 'countdown') return;
+      if (n === 0) {
+        bigCount.classList.add('hidden');
+        startSession();
+        return;
+      }
+      bigCount.textContent = n;
+      bigCount.animate(
+        [{ opacity: 0, transform: 'scale(1.18)' }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 420, easing: 'ease-out' }
+      );
+      n -= 1;
+      countdownTimer = setTimeout(step, 1000);
+    }
+    step();
+  }
+
+  /* ---------- breathing session ---------- */
+  function startSession() {
+    state = 'running';
+    cycle = 0;
+    updateDots();
+    beginPhase(0);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function beginPhase(idx) {
+    phaseIdx = idx;
+    var p = PHASES[idx];
+    phaseStart = performance.now();
+    phaseWord.textContent = p.label;
+    app.classList.toggle('is-holding', idx === 1);
+    if (idx !== 1) setDisc(p.scale, p.dur, p.ease);
+  }
+
+  function tick(now) {
+    if (state !== 'running') return;
+    var p = PHASES[phaseIdx];
+    var elapsed = now - phaseStart;
+
+    if (elapsed >= p.dur) {
+      arc.style.strokeDashoffset = 0;
+      var next = phaseIdx + 1;
+      if (next >= PHASES.length) {
+        cycle += 1;
+        updateDots();
+        if (cycle >= CYCLES) { finish(); return; }
+        next = 0;
+      }
+      beginPhase(next);
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
+
+    var progress = elapsed / p.dur;
+    arc.style.strokeDashoffset = CIRC * (1 - progress);
+    phaseCount.textContent = Math.ceil((p.dur - elapsed) / 1000);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function updateDots() {
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle('done', i < cycle);
+    }
+  }
+
+  function finish() {
+    state = 'done';
+    cancelAnimationFrame(rafId);
+    app.classList.remove('is-holding');
+    releaseWakeLock();
+    phaseWord.textContent = '';
+    phaseCount.textContent = '';
+    arc.style.strokeDashoffset = CIRC;
+    setDisc(REST_SCALE, 2.4, 'ease-in-out');
+    show(doneView);
+    doneView.firstElementChild.classList.remove('fade-in');
+    void doneView.offsetWidth;
+    doneView.firstElementChild.classList.add('fade-in');
+  }
+
+  function reset() {
+    state = 'idle';
+    cancelAnimationFrame(rafId);
+    clearTimeout(countdownTimer);
+    app.classList.remove('is-running', 'is-holding');
+    releaseWakeLock();
+    bigCount.classList.add('hidden');
+    phaseWord.textContent = '';
+    phaseCount.textContent = '';
+    arc.style.strokeDashoffset = CIRC;
+    setDisc(REST_SCALE, 1.2, 'ease-in-out');
+    show(idleView);
+  }
+
+  /* ---------- pause while the tab is hidden ---------- */
+  document.addEventListener('visibilitychange', function () {
+    if (state !== 'running') {
+      if (document.visibilityState === 'visible' && (state === 'countdown' || state === 'done')) {
+        if (state === 'countdown') requestWakeLock();
+      }
+      return;
+    }
+    if (document.visibilityState === 'hidden') {
+      pausedElapsed = Math.min(performance.now() - phaseStart, PHASES[phaseIdx].dur - 1);
+      cancelAnimationFrame(rafId);
+    } else {
+      if (pausedElapsed !== null) {
+        phaseStart = performance.now() - pausedElapsed;
+        pausedElapsed = null;
+        // re-aim the disc for the remainder of the phase
+        var p = PHASES[phaseIdx];
+        if (phaseIdx !== 1) setDisc(p.scale, p.dur - (performance.now() - phaseStart), p.ease);
+        rafId = requestAnimationFrame(tick);
+      }
+      requestWakeLock();
+    }
+  });
+
+  startBtn.addEventListener('click', startCountdown);
+  againBtn.addEventListener('click', startCountdown);
+  endBtn.addEventListener('click', reset);
+
+  // block double-tap zoom on iOS Safari
+  var lastTouch = 0;
+  document.addEventListener('touchend', function (e) {
+    var now = Date.now();
+    if (now - lastTouch < 350) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>
