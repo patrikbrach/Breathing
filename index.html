@@ -289,10 +289,13 @@
 (function () {
   'use strict';
 
+  // One "count" is a slow, relaxed beat rather than a literal second,
+  // so the 4-7-8 rhythm never feels rushed.
+  var BEAT = 1400;
   var PHASES = [
-    { label: 'Breathe in',  dur: 4000, scale: 1,    ease: 'cubic-bezier(0.37, 0, 0.28, 1)' },
-    { label: 'Hold',        dur: 7000, scale: 1,    ease: 'linear' },
-    { label: 'Breathe out', dur: 8000, scale: 0.62, ease: 'cubic-bezier(0.45, 0, 0.35, 1)' }
+    { label: 'Breathe in',  beats: 4, dur: 4 * BEAT, scale: 1,    ease: 'cubic-bezier(0.5, 0, 0.45, 1)' },
+    { label: 'Hold',        beats: 7, dur: 7 * BEAT, scale: 1,    ease: 'linear' },
+    { label: 'Breathe out', beats: 8, dur: 8 * BEAT, scale: 0.62, ease: 'cubic-bezier(0.5, 0, 0.4, 1)' }
   ];
   var CYCLES = 4;
   var REST_SCALE = 0.62;
@@ -370,11 +373,11 @@
       }
       bigCount.textContent = n;
       bigCount.animate(
-        [{ opacity: 0, transform: 'scale(1.18)' }, { opacity: 1, transform: 'scale(1)' }],
-        { duration: 420, easing: 'ease-out' }
+        [{ opacity: 0, transform: 'scale(1.12)' }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 600, easing: 'ease-out' }
       );
       n -= 1;
-      countdownTimer = setTimeout(step, 1000);
+      countdownTimer = setTimeout(step, 1300);
     }
     step();
   }
@@ -393,6 +396,7 @@
     var p = PHASES[idx];
     phaseStart = performance.now();
     phaseWord.textContent = p.label;
+    phaseCount.textContent = p.beats;
     app.classList.toggle('is-holding', idx === 1);
     if (idx !== 1) setDisc(p.scale, p.dur, p.ease);
   }
@@ -418,7 +422,7 @@
 
     var progress = elapsed / p.dur;
     arc.style.strokeDashoffset = CIRC * (1 - progress);
-    phaseCount.textContent = Math.ceil((p.dur - elapsed) / 1000);
+    phaseCount.textContent = Math.ceil((p.dur - elapsed) / BEAT);
     rafId = requestAnimationFrame(tick);
   }
 

@@ -8,10 +8,12 @@ Press **Start**, follow a 3-2-1 countdown, then breathe with the circle: it expa
 
 Uses the **4-7-8 relaxation method** (Dr. Andrew Weil):
 
-- Breathe in through the nose for **4 seconds**
-- Hold for **7 seconds**
-- Breathe out slowly through the mouth for **8 seconds**
-- Repeat for **4 cycles** (about 75 seconds)
+- Breathe in through the nose for **4 counts**
+- Hold for **7 counts**
+- Breathe out slowly through the mouth for **8 counts**
+- Repeat for **4 cycles**
+
+Counts are paced as slow, relaxed beats (~1.4 s each) rather than literal seconds, so the rhythm never feels rushed — a full session is about two minutes.
 
 ## Features
 
