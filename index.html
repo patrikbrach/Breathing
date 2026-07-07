@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Breathe">
 <meta name="theme-color" content="#050506">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Breathe</title>
 <style>
   :root {
@@ -49,6 +51,32 @@
   }
 
   /* ---------- header ---------- */
+  .top {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .sound-toggle {
+    position: absolute;
+    right: 0;
+    appearance: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+    padding: 10px 0 10px 14px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  .sound-toggle:active { color: var(--ink); }
+  .sound-toggle:focus-visible { outline: 2px solid var(--mist); outline-offset: 2px; }
+
   .brand {
     font-size: 11px;
     font-weight: 500;
@@ -241,7 +269,10 @@
 <body>
 <main class="app" id="app">
 
-  <div class="brand">Breathe</div>
+  <header class="top">
+    <div class="brand">Breathe</div>
+    <button class="sound-toggle" id="soundBtn" aria-pressed="true">Sound on</button>
+  </header>
 
   <div class="stage" aria-live="polite">
     <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
@@ -299,6 +330,8 @@
   ];
   var CYCLES = 4;
   var REST_SCALE = 0.62;
+  // one soft tone per phase: rising for in, middle for hold, low for out
+  var TONES = [523.25, 392, 261.63];
 
   var app = document.getElementById('app');
   var disc = document.getElementById('disc');
@@ -313,6 +346,7 @@
   var startBtn = document.getElementById('startBtn');
   var endBtn = document.getElementById('endBtn');
   var againBtn = document.getElementById('againBtn');
+  var soundBtn = document.getElementById('soundBtn');
   var dots = document.getElementById('cycleDots').children;
 
   var CIRC = 2 * Math.PI * 146;
@@ -342,6 +376,45 @@
     halo.style.transform = 'scale(' + scale + ')';
   }
 
+  /* ---------- sound cues ---------- */
+  var audioCtx = null;
+  var soundOn = localStorage.getItem('breathe-sound') !== 'off';
+
+  function renderSoundBtn() {
+    soundBtn.textContent = soundOn ? 'Sound on' : 'Sound off';
+    soundBtn.setAttribute('aria-pressed', soundOn);
+  }
+
+  // must be called from a user gesture so iOS lets audio through
+  function ensureAudio() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+
+  function cue(freq, when) {
+    if (!soundOn || !audioCtx) return;
+    try {
+      var t = audioCtx.currentTime + (when || 0);
+      var main = audioCtx.createOscillator();
+      var warm = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      main.type = 'sine';
+      main.frequency.value = freq;
+      warm.type = 'sine';
+      warm.frequency.value = freq / 2;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.16, t + 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+      main.connect(gain);
+      warm.connect(gain);
+      gain.connect(audioCtx.destination);
+      main.start(t); warm.start(t);
+      main.stop(t + 2); warm.stop(t + 2);
+    } catch (e) { /* audio unavailable; the visual guide still works */ }
+  }
+
   function requestWakeLock() {
     if (!('wakeLock' in navigator)) return;
     navigator.wakeLock.request('screen').then(function (lock) {
@@ -361,6 +434,7 @@
     phaseWord.textContent = '';
     phaseCount.textContent = 'Get comfortable';
     bigCount.classList.remove('hidden');
+    ensureAudio();
     requestWakeLock();
 
     var n = 3;
@@ -397,6 +471,7 @@
     phaseStart = performance.now();
     phaseWord.textContent = p.label;
     phaseCount.textContent = p.beats;
+    cue(TONES[idx]);
     app.classList.toggle('is-holding', idx === 1);
     if (idx !== 1) setDisc(p.scale, p.dur, p.ease);
   }
@@ -441,6 +516,7 @@
     phaseCount.textContent = '';
     arc.style.strokeDashoffset = CIRC;
     setDisc(REST_SCALE, 2.4, 'ease-in-out');
+    cue(392); cue(523.25, 0.45);
     show(doneView);
     doneView.firstElementChild.classList.remove('fade-in');
     void doneView.offsetWidth;
@@ -488,6 +564,19 @@
   startBtn.addEventListener('click', startCountdown);
   againBtn.addEventListener('click', startCountdown);
   endBtn.addEventListener('click', reset);
+
+  renderSoundBtn();
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    localStorage.setItem('breathe-sound', soundOn ? 'on' : 'off');
+    renderSoundBtn();
+    if (soundOn) { ensureAudio(); cue(392); }
+  });
+
+  // offline support once installed
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
 
   // block double-tap zoom on iOS Safari
   var lastTouch = 0;

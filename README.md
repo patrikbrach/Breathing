@@ -18,7 +18,9 @@ Counts are paced as slow, relaxed beats (~1.4 s each) rather than literal second
 ## Features
 
 - Black / white / light-gray minimalist design with the native iOS system font
-- Animated breathing circle with a per-phase progress ring and second countdown
+- Animated breathing circle with a per-phase progress ring and beat countdown
+- Gentle sound cues at each phase change (rising tone to breathe in, low tone to breathe out) so the exercise works with eyes closed — toggle top-right, remembered between visits; note that iPhone's silent switch mutes them
+- Installable as a home-screen app: web manifest, matching black icon, and a service worker that makes it launch instantly and work fully offline
 - iPhone Safari optimizations: safe-area insets, no tap highlight or double-tap zoom, dynamic viewport height
 - Screen wake-lock keeps the display on during the exercise (where supported)
 - Session pauses automatically if you switch away from the tab
